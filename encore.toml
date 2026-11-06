@@ -1,12 +1,10 @@
 [project]
 name = "ehirlib"
+binary-name = "ehir"
 version = "0.0.0"
-repository = "https://github.com/encore-ecosystem/encore"
-encore = ">=0.1.6"
-description = "eHIR construction, parsing, validation and transformations for Encore"
+repository = "https://github.com/encore-language-index/ehirlib"
+encore = ">=0.1.14"
+description = ""
 readme = "README.md"
 licence = "MIT"
-dependencies = [
-    "index@std@0.0.8",
-    "sys@core",
-]
+dependencies = ["path@../std", "path@../ehir-core", "path@../ehir-llvm-backend"]
