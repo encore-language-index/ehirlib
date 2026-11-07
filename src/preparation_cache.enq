@@ -43,7 +43,7 @@ pub fn prepare_with_store[S: PreparedFunctionStore](bundle: ModuleBundle,
     let mut counts = PreparationCounts { 0_usize, 0_usize }
     let mut fallback = 0_usize
     for module in bundle.modules {
-        if has_async(module) {
+        if has_coroutines(module) {
             let prepared = match prepare_module(module) {
                 PreparationOutcome::Ready(value) => value
                 PreparationOutcome::Error(message) => {
@@ -168,17 +168,19 @@ fn prepare_cached_function[S: PreparedFunctionStore](function: FnDirective, key:
     ret Result::Err(CompilerDiagnostic { "prepare", "function preparation produced no function" })
 }
 
-fn has_async(module: Module) -> bool {
+// Coroutine preparation produces layouts and helper functions as well as the
+// factory. A single-function cache entry cannot preserve that complete graph.
+fn has_coroutines(module: Module) -> bool {
     for directive in module.directives {
         match directive {
             Directive::Function(function) => {
-                if function.is_async {
+                if function.is_async || function.generator_type.is_some() {
                     ret true
                 }
             }
             Directive::Impl(item) => {
                 for method in item.methods {
-                    if method.is_async {
+                    if method.is_async || method.generator_type.is_some() {
                         ret true
                     }
                 }
