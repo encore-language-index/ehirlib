@@ -37,14 +37,20 @@ fn generator_cache_contract(store: Store) -> bool {
         "struct Owner {\nvalue: usize\n}\nimpl Owner {\ngenerator fn values(self: Owner) -> usize => Generator[usize] {\n$entry:\nvalue: usize = getfield self > 0\nyield value: usize\nret void\n}\n}\n"
     ] {
         let bundle = match parse_text("generator_cache", source) {
-            Ok(value) => value Err(_) => { ret false }
+            Ok(value) => value Err(_) => {
+                ret false
+            }
         }
         let plain = match prepare(bundle) {
-            Ok(value) => value Err(_) => { ret false }
+            Ok(value) => value Err(_) => {
+                ret false
+            }
         }
         for _ in 0_usize..2_usize {
             let cached = match prepare_with_store(bundle, Vec[FunctionPreparationKey]::new(), store) {
-                Ok(value) => value Err(_) => { ret false }
+                Ok(value) => value Err(_) => {
+                    ret false
+                }
             }
             if cached.modules_fallback != 1_usize || cached.functions_reused != 0_usize {
                 ret false
