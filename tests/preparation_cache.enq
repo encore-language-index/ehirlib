@@ -29,6 +29,34 @@ impl PreparedFunctionStore for Store {
         ret Result::Ok(())
     }
 }
+
+fn generator_cache_contract(store: Store) -> bool {
+    for source in vec![
+        "generator fn values(limit: usize) -> usize => Generator[usize] {\n$entry:\nyield limit: usize\nret void\n}\n",
+        "generator fn copied[T](value: T) -> T => Generator[T] {\n$entry:\nyield value: T\nret void\n}\n",
+        "struct Owner {\nvalue: usize\n}\nimpl Owner {\ngenerator fn values(self: Owner) -> usize => Generator[usize] {\n$entry:\nvalue: usize = getfield self > 0\nyield value: usize\nret void\n}\n}\n"
+    ] {
+        let bundle = match parse_text("generator_cache", source) {
+            Ok(value) => value Err(_) => { ret false }
+        }
+        let plain = match prepare(bundle) {
+            Ok(value) => value Err(_) => { ret false }
+        }
+        for _ in 0_usize..2_usize {
+            let cached = match prepare_with_store(bundle, Vec[FunctionPreparationKey]::new(), store) {
+                Ok(value) => value Err(_) => { ret false }
+            }
+            if cached.modules_fallback != 1_usize || cached.functions_reused != 0_usize {
+                ret false
+            }
+            if module_bundle_to_string(cached.program.program) != module_bundle_to_string(plain.program) {
+                ret false
+            }
+        }
+    }
+    ret true
+}
+
 fn main() -> u32 {
     let root = Path::new("target/prepared-function-contract")
     let _removed = remove_dir_all(root.as_str())
@@ -105,6 +133,9 @@ fn main() -> u32 {
     }
     if !assert(asynchronous.modules_fallback == 1_usize) {
         ret 18_u32
+    }
+    if !assert(generator_cache_contract(store)) {
+        ret 19_u32
     }
     let _cleanup = remove_dir_all(root.as_str())
     ret 0_u32
